@@ -1,5 +1,9 @@
 package com.example.carpark.service;
 
+import com.example.carpark.exception.ChargingPointNotFoundException;
+import com.example.carpark.exception.ChargingPointNotOccupiedException;
+import com.example.carpark.exception.InvalidIdException;
+import com.example.carpark.exception.OccupiedChargingPointException;
 import com.example.carpark.model.ChargingPoint;
 import com.example.carpark.model.Current;
 import com.example.carpark.repository.ChargingPointRepository;
@@ -58,17 +62,17 @@ public class ChargingPointServiceImpl implements ChargingPointService {
 
     private void validateBeforePlug(ChargingPoint chargingPoint) {
         if (chargingPoint == null) {
-            throw new IllegalArgumentException("Charging Point is not found");
+            throw new ChargingPointNotFoundException();
         } else if (!chargingPoint.isFree()) {
-            throw new IllegalStateException("Charging Point is already occupied");
+            throw new OccupiedChargingPointException(chargingPoint.getId().toString());
         }
     }
 
     private void validateBeforeUnplug(ChargingPoint chargingPoint) {
         if (chargingPoint == null) {
-            throw new IllegalArgumentException("Charging Point is not found");
+            throw new ChargingPointNotFoundException();
         } else if (chargingPoint.isFree()) {
-            throw new IllegalStateException("Charging Point is not occupied");
+            throw new ChargingPointNotOccupiedException(chargingPoint.getId().toString());
         }
     }
 
@@ -97,7 +101,11 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     }
 
     private UUID toUUID(String id) {
-        return UUID.fromString(id);
+        try {
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidIdException(id);
+        }
     }
 
     private boolean isFullCapacityReached() {
